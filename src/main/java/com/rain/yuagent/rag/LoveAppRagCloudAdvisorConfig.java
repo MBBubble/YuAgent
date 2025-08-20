@@ -33,4 +33,18 @@ public class LoveAppRagCloudAdvisorConfig {
                 .documentRetriever(dashScopeDocumentRetriever)
                 .build();
     }
+
+    @Bean
+    public Advisor lawyerAppRagBaseCloudAdvisor() {
+        log.info("查询云知识库-律政先锋");
+        DashScopeApi dashScopeApi = new DashScopeApi(dashScopeApiKey);
+        final String KNOWLEDGE_INDEX = "律政先锋";
+        DocumentRetriever dashScopeDocumentRetriever = new DashScopeDocumentRetriever(dashScopeApi,
+                DashScopeDocumentRetrieverOptions.builder()
+                        .withIndexName(KNOWLEDGE_INDEX)
+                        .build());
+        return RetrievalAugmentationAdvisor.builder()
+                .documentRetriever(dashScopeDocumentRetriever)
+                .build();
+    }
 }

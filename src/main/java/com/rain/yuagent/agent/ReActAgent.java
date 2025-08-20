@@ -1,6 +1,7 @@
 package com.rain.yuagent.agent;
 
 import com.rain.yuagent.agent.model.AgentState;
+import com.rain.yuagent.agent.model.ThinkResult;
 
 /**
  * ReAct (Reasoning and Acting) 模式的代理抽象类，Base的具体实现
@@ -13,7 +14,7 @@ public abstract class ReActAgent extends BaseAgent {
      *
      * @return 是否需要进行下一步 true：需要； false：无需
      */
-    public abstract Boolean think();
+    public abstract ThinkResult think();
 
     /**
      * 具体执行
@@ -28,15 +29,14 @@ public abstract class ReActAgent extends BaseAgent {
     @Override
     public String step() {
         try {
-            Boolean thinkResult = think();
-            if (thinkResult) {
-                // 需要行动
-                return act();
-            } else {
+            ThinkResult thinkResult = think();
+            if (!thinkResult.getIsAct()) {
                 // 无需行动，更改状态
                 setState(AgentState.FINISHED);
-                return "思考完成 - 无需行动";
+                return thinkResult.getThinkContent();
             }
+            // 需要行动
+            return act();
         } catch (Exception e){
             // 记录异常日志
             e.printStackTrace();

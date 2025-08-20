@@ -3,16 +3,16 @@ spring:
     name: yu-agent
   ai:
     dashscope:
-      api-key: ''
+      api-key: 'your key sk-'
       chat:
         options:
           model: qwen-plus
-#    mcp:
-#      client:
-#        stdio:
-#          servers-configuration: classpath:mcp-servers.json
-#        enabled: true
-#        request-timeout: 30s
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
+        enabled: true
+        request-timeout: 30s
 server:
   port: 8123
   servlet:
@@ -36,7 +36,7 @@ knife4j:
     language: zh_cn
 # Search API 配置
 search-api:
-  api-key: ''
+  api-key: 'your search key'
 # 配置Spring AI日志输出为 debug
 logging:
   level:

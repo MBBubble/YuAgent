@@ -82,12 +82,35 @@
 //        Assertions.assertNotNull(answer);
 //    }
 //
-////    @Test
-////    void doChatWithMcp() {
-////        String chatId = UUID.randomUUID().toString();
-////        // 测试地图 MCP
-////        String message = "我的另一半居住在深圳市南山区，请帮我找到 5 公里内合适的约会地点";
-////        String answer =  loveApp.doChatWithMcp(message, chatId);
-////    }
+//    @Test
+//    void doChatWithMcp() {
+//        String chatId = UUID.randomUUID().toString();
+//        // 测试地图 MCP
+//        //String message = "我的另一半居住在深圳市南山区，请帮我找到 5 公里内合适的约会地点";
+//        String message = "我目前居住在深圳市，帮我找一下深圳市内可靠的律师事务所，并给我具体的位置信息。";
+//        String answer =  loveApp.doChatWithMcp(message, chatId);
+//    }
 //
+//    @Test
+//    public void testLawyerWithBaseRag (){
+//        String chatId = UUID.randomUUID().toString();
+//        String message = "我现在想要发起诉讼，请问民事诉讼需要准备哪些材料？";
+//        String answer =  loveApp.doChatWithRag(message, chatId);
+//        Assertions.assertNotNull(answer);
+//    }
+//
+//    @Test
+//    void doChatWithRagCloudLawyer() {
+//        String chatId = UUID.randomUUID().toString();
+//        String message = "我现在想要发起诉讼，请问民事诉讼需要准备哪些材料？";
+//        String answer =  loveApp.doChatWithRagBaseCloudLawyer(message, chatId);
+//        Assertions.assertNotNull(answer);
+//    }
+//
+//    @Test
+//    void doChatWithMultiFunctionLawyer() {
+//        String chatId = UUID.randomUUID().toString();
+//        String message = "我现在想要发起诉讼，请问民事诉讼需要准备哪些材料？";
+//        loveApp.doChatWithLawyerByStream(message, chatId);
+//    }
 //}

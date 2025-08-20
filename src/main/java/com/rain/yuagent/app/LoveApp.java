@@ -1,6 +1,7 @@
 package com.rain.yuagent.app;
 
 import com.rain.yuagent.advisor.MyLoggerAdvisor;
+import com.rain.yuagent.constant.SystemPromptConstant;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -30,12 +31,15 @@ public class LoveApp {
     @Resource
     private VectorStore localVectorStore;
 
-    @Resource
+    @Resource(name = "loveAppRagBaseCloudAdvisor")
     private Advisor loveAppRagCloudAdvisor;
 
     // 引入自己注册的工具
     @Resource
     private ToolCallback[]  allTools;
+
+    @Resource(name = "lawyerAppRagBaseCloudAdvisor")
+    private Advisor lawyerAppRagBaseCloudAdvisor;
 
     private static final String SYSTEM_PROMPT = "扮演深耕恋爱心理领域的专家。开场向用户表明身份，告知用户可倾诉恋爱难题。" +
             "围绕单身、恋爱、已婚三种状态提问：单身状态询问社交圈拓展及追求心仪对象的困扰；" +
@@ -50,7 +54,7 @@ public class LoveApp {
         // 基于内存的对话记忆
         InMemoryChatMemory chatMemory = new InMemoryChatMemory();
         chatClient = ChatClient.builder(dashscopeChatModel)
-                .defaultSystem(SYSTEM_PROMPT)
+                .defaultSystem(SystemPromptConstant.LAWYER_SYSTEM_PROMPT)
                 .defaultAdvisors(
                         new MessageChatMemoryAdvisor(chatMemory)
                         // 使用自定义的日志 advisor
@@ -178,6 +182,29 @@ public class LoveApp {
     }
 
     /**
+     * RAG 知识库进行对话，Spring AI + 云知识库（阿里云百炼）
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithRagBaseCloudLawyer(String message, String chatId) {
+        ChatResponse chatResponse = chatClient
+                .prompt()
+                .user(message)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                // 自定义日志
+                .advisors(new MyLoggerAdvisor())
+                // 基于云知识库 Rag
+                .advisors(lawyerAppRagBaseCloudAdvisor)
+                .call()
+                .chatResponse();
+        String response = chatResponse.getResult().getOutput().getText();
+        log.info("response: {}", response);
+        return response;
+    }
+
+    /**
      * 调用 mcp 服务
      * @param message
      * @param chatId
@@ -210,6 +237,24 @@ public class LoveApp {
                 .user(message)
                 .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
                         .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                .stream()
+                .content();
+    }
+
+    /**
+     * 聚合多种功能 流式调用
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public Flux<String> doChatWithLawyerByStream(String message, String chatId) {
+        return chatClient.prompt()
+                .user(message)
+                .advisors(spec -> spec.param(CHAT_MEMORY_CONVERSATION_ID_KEY, chatId)
+                        .param(CHAT_MEMORY_RETRIEVE_SIZE_KEY, 10))
+                .advisors(lawyerAppRagBaseCloudAdvisor)
+                // 工具
+                .tools(allTools)
                 .stream()
                 .content();
     }

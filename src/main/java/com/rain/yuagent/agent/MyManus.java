@@ -1,5 +1,6 @@
 package com.rain.yuagent.agent;
 
+import com.rain.yuagent.advisor.MyLoggerAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MyManus extends ToolCallAgent {
 
-    public MyManus(ToolCallback[] availableTools, ChatModel dashscopeChatModel) {
-        super(availableTools);
+    public MyManus(ToolCallback[] allTools, ChatModel dashscopeChatModel) {
+        super(allTools);
         this.setName("yuManus");
         String SYSTEM_PROMPT = """
                 You are YuManus, an all-capable AI assistant, aimed at solving any task presented by the user.
@@ -31,7 +32,7 @@ public class MyManus extends ToolCallAgent {
         this.setMaxStep(10);
 
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
-                .defaultTools(availableTools)
+                .defaultTools(new MyLoggerAdvisor())
                 .build();
         this.setChatClient(chatClient);
     }

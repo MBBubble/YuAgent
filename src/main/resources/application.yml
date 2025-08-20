@@ -3,16 +3,16 @@ spring:
     name: yu-agent
   ai:
     dashscope:
-      api-key: ''
+      api-key: 'your key sk-'
       chat:
         options:
           model: qwen-plus
-#    mcp:
-#      client:
-#        stdio:
-#          servers-configuration: classpath:mcp-servers.json
-#        enabled: true
-#        request-timeout: 30s
+    mcp:
+      client:
+        stdio:
+          servers-configuration: classpath:mcp-servers.json
+        enabled: true
+        request-timeout: 30s
 server:
   port: 8123
   servlet:

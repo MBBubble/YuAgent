@@ -26,7 +26,7 @@ public class AiController {
     private ChatModel dashscopeChatModel;
 
     @Resource
-    private ToolCallback[] toolCallbacks;
+    private ToolCallback[] allTools;
 
     @GetMapping("/loveApp/chat/sync")
     public String doChatWithLoveAppSync(String message, String chatId){
@@ -91,8 +91,34 @@ public class AiController {
      */
     @GetMapping("/manus/chat")
     public SseEmitter doChatWithManus (String message){
-        MyManus myManus = new MyManus(toolCallbacks, dashscopeChatModel);
+        MyManus myManus = new MyManus(allTools, dashscopeChatModel);
         return myManus.runStream(message);
     }
 
+    /**
+     * 律政先锋AI助手，使用 SseEmitter ，持续返回消息, 结合多种功能
+     * @param message 用户输入
+     * @param chatId 聊天ID
+     * @return 返回一个 SseEmitter 对象，通过 send 方法持续向 SseEmitter 发送消息
+     */
+    @GetMapping("/lawyer/chat/sse/sseEmitter")
+    public SseEmitter doChatWithLawyerSSESseEmitter(String message, String chatId){
+        // 创建一个具有超时时间的 sseEmitter
+        SseEmitter sseEmitter = new SseEmitter(18000L);
+        // 获取 Flux 数据流并直接订阅
+        loveApp.doChatWithLawyerByStream(message, chatId)
+                .subscribe(
+                        // 处理每条消息
+                        item -> {
+                            try {
+                                sseEmitter.send(item);
+                            } catch (IOException e) {
+                                // 如果异常 通过 completeWithError 进行处理
+                                sseEmitter.completeWithError(e);
+                            }
+                        },
+                        sseEmitter::completeWithError,sseEmitter::complete
+                );
+        return sseEmitter;
+    }
 }

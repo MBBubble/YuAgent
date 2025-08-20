@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.rain.yuagent.agent.model.AgentState;
+import com.rain.yuagent.agent.model.ThinkResult;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class ToolCallAgent extends ReActAgent {
     /**
      * 可用的工具
      */
-    private final ToolCallback[] availableTools;
+    private final ToolCallback[] allTools;
 
     /**
      * 工具管理器
@@ -54,11 +55,11 @@ public class ToolCallAgent extends ReActAgent {
      */
     private ChatResponse  chatResponse;
 
-    public ToolCallAgent(ToolCallback[] availableTools){
+    public ToolCallAgent(ToolCallback[] allTools){
         super();
-        this.availableTools = availableTools;
+        this.allTools = allTools;
         this.toolCallingManager = ToolCallingManager.builder().build();
-        this.chatOptions = DashScopeChatOptions.builder().build();
+        this.chatOptions = DashScopeChatOptions.builder().withProxyToolCalls(true).build();
     }
 
     /**
@@ -66,12 +67,14 @@ public class ToolCallAgent extends ReActAgent {
      * @return 是否需要执行相关行动 true：有工具 需要；false：没有工具 不需要
      */
     @Override
-    public Boolean think() {
+    public ThinkResult think() {
         // 1、提示词校验，拼接用户提示词
         if(StrUtil.isNotBlank(getNextStepPrompt())){
             UserMessage userMessage = new UserMessage(getNextStepPrompt());
             getMessageList().add(userMessage);
         }
+
+        ThinkResult thinkResult = new ThinkResult();
 
         // 2、调用AI大模型，获取工具调用结果
         List<Message> messageList = getMessageList();
@@ -80,7 +83,7 @@ public class ToolCallAgent extends ReActAgent {
             ChatResponse chatResponse = getChatClient()
                     .prompt(prompt)
                     .system(getSystemPrompt())
-                    .tools(availableTools)
+                    .tools(allTools)
                     .call()
                     .chatResponse();
             // 保存响应结果
@@ -100,15 +103,21 @@ public class ToolCallAgent extends ReActAgent {
             // 如果不需要工具，返回 false
             if (toolCallList.isEmpty()){
                 getMessageList().add(assistantMessage);
-                return false;
+                thinkResult.setThinkContent(assistantMessageText);
+                thinkResult.setIsAct(false);
+                return thinkResult;
             } else {
                 // 需要调用工具 返回 true
-                return true;
+                thinkResult.setThinkContent(assistantMessageText);
+                thinkResult.setIsAct(true);
+                return thinkResult;
             }
         } catch (Exception e) {
             log.error("{}的思考过程遇到了问题：{}", getName(), e.getMessage());
             getMessageList().add(new AssistantMessage("处理时遇到了错误：" + e.getMessage()));
-            return false;
+            thinkResult.setIsAct(false);
+            thinkResult.setThinkContent(e.getMessage());
+            return thinkResult;
         }
     }
 
@@ -129,19 +138,22 @@ public class ToolCallAgent extends ReActAgent {
         // 记录消息上下文
         setMessageList(toolExecutionResult.conversationHistory());
         ToolResponseMessage toolResponseMessage = (ToolResponseMessage)CollUtil.getLast(toolExecutionResult.conversationHistory());
+        String result = toolResponseMessage.getResponses().stream()
+                .map(response -> "工具" + response.name() + "完成了他的任务，结果：" + response.responseData())
+                .collect(Collectors.joining("\n"));
         boolean isDoTerminate = toolResponseMessage.getResponses().stream()
                 .anyMatch(toolResponse -> {
-                    return toolResponse.name().equals("doTerminate");
+                    return "doTerminate".equals(toolResponse.name());
                 });
         if (isDoTerminate){
             // 调用了终止工具，任务结束
             setState(AgentState.FINISHED);
             log.info("调用了终止工具 doTerminate");
         }
-        String results = toolResponseMessage.getResponses().stream()
-                .map(response -> "工具 " + response.name() + " 返回的结果：" + response.responseData())
-                .collect(Collectors.joining("\n"));
-        log.info(results);
-        return results;
+//        String results = toolResponseMessage.getResponses().stream()
+//                .map(response -> "工具 " + response.name() + " 返回的结果：" + response.responseData())
+//                .collect(Collectors.joining("\n"));
+        log.info(result);
+        return result;
     }
 }

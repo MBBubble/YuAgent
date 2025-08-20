@@ -135,7 +135,7 @@ public abstract class BaseAgent {
                         int stepNumber = i + 1;
                         currentStep = stepNumber;
                         // 单步执行
-                        String currentStepResult = this.step();
+                        String currentStepResult = step();
                         // 单步执行结果
                         String result = "Step " + stepNumber + ": " + currentStepResult;
                         // 将单步结果发送给 SseEmitter
